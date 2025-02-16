@@ -1,14 +1,14 @@
 #! /usr/bin/env python
-if __name__ != "__main__":
-    raise Exception("program is not a module; execute it directly")
-
-
-import json.tool
+import time
 import sys
 import os
 from pathlib import Path
 import json
 import requests
+
+if __name__ != "__main__":
+    raise Exception("program is not a module; execute it directly")
+
 
 try:
     API_TOKEN =  os.environ.get(".API_TOKEN", Path('.API_TOKEN').read_text())
@@ -17,24 +17,25 @@ except FileNotFoundError as e:
 USAGE_STR = f"usage: {sys.argv[0]} <filename> <model>"
 OUT_DIR = Path("out")
 FORMATS = ('pdf',) # TODO: moar
-MODELS = Path('.models')
-
+MODELS = json.loads(Path('.models').read_text())['data']
+MODEL_IDS = [model['id'] for model in MODELS]
 try:
     fname: str = sys.argv[1]
     # TODO: bash completion or choose from index, will be easier with a TUI
-    model: str = sys.argv[2]
+    modelId: str = sys.argv[2]
 except IndexError as e:
     raise IndexError(USAGE_STR) from e
 fextension = fname[fname.rfind('.')+1:]
 if fextension not in FORMATS:
     raise ValueError("unavailable file format; choose from " + str(FORMATS))
-if model not in MODELS:
-    raise ValueError("unavailable model; choose from " + str(MODELS))
+if modelId not in MODEL_IDS:
+    raise ValueError("unavailable model; choose from https://openrouter.ai/models")
+model = next(model for model in MODELS if model['id'] == modelId)
 
-# pylint: disable=wrong-import-position
-import time
+
 # these imports take long so I placed them after initial checks
 # even if it disrespects pylint C0413
+# pylint: disable=wrong-import-position
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import text_from_rendered
