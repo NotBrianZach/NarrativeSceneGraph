@@ -1,0 +1,3 @@
+creation_rules:
+  - pgp: "0x0504C96DB9567C54"  # Replace YOURKEYIDHERE with your actual GPG key ID
+  # - pgp: "0x79B79AD557DD5710F0D09195E4F8686E3A51B438"  # Replace YOURKEYIDHERE with your actual GPG key ID
