@@ -1,5 +1,7 @@
 .API_TOKEN
-.venv/
+.models
 in/
 out/
+
+.venv/
 .vscode/
