@@ -4,11 +4,16 @@ if __name__ != "__main__":
 
 
 import sys
+import os
 from pathlib import Path
 
+try:
+    API_TOKEN = Path('.API_TOKEN').read_text()
+except FileNotFoundError as e:
+    raise FileNotFoundError("paste your OpenRouter token into `.API_TOKEN`") from e
 USAGE_STR = f"usage: {sys.argv[0]} <filename> <model>"
 FORMATS = ('pdf',) # TODO: moar
-MODELS = ('',) # TODO: moar; these will be the model strings
+MODELS = ('openai/gpt-4o',) # TODO: moar; these will be the model strings
 OUT_FOLDER = Path("out")
 
 try:
@@ -20,7 +25,7 @@ fextension = fname[fname.rfind('.')+1:]
 if fextension not in FORMATS:
     raise ValueError("unavailable file format; choose from " + str(FORMATS))
 
-import os
+# pylint: disable=wrong-import-position
 import time
 import logging
 # these imports take so long so I placed them after initial checks
@@ -28,8 +33,8 @@ import logging
 from marker.converters.pdf import PdfConverter
 from marker.modelws import create_model_dict
 from marker.output import text_from_rendered
+# pylint: enableq=wrong-import-position
 logging.getLogger().setLevel(level=3)
-os.environ["GLOG_minloglevel"] = "3"
 
 FORMAT_CONVERTERS = {'pdf': PdfConverter}
 assert tuple(FORMAT_CONVERTERS.keys()) == FORMATS
@@ -40,8 +45,6 @@ converter = FORMAT_CONVERTERS[fextension](
 )
 rendered = converter(fname)
 text, _, images = text_from_rendered(rendered)
-print(f"took:\t{round(time.time() - tstart, 2)}s")
+print(f"took:\t{round(time.time() - tstart, 2)}s (imports + parsing)")
 
-
-# if user wants to save
-# OUT_FOLDER.mkdir(exist_ok=True, parents=True)
+# TODO: split into nodes
