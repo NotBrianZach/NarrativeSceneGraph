@@ -12,7 +12,7 @@
 - body compression (i.e. chunking)
 
 ### Prompt
-- type of output node  (scene, logical connection/sequence), depends on context of document, for the future though
+- type of output node (scene, logical connection/sequence), depends on context of document, for the future though
 
 ## 2 think about
 - final file format (twine)

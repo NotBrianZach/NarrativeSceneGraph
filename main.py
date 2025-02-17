@@ -1,10 +1,11 @@
 #! /usr/bin/env python
-import time
 import sys
 import os
 from pathlib import Path
 import json
+import time
 import requests
+
 
 if __name__ != "__main__":
     raise Exception("program is not a module; execute it directly")
@@ -19,23 +20,33 @@ OUT_DIR = Path("out")
 FORMATS = ('pdf',) # TODO: moar
 MODELS = json.loads(Path('.models.json').read_text())['data']
 MODEL_IDS = (model['id'] for model in MODELS)
-PROMPT = '''
-# Parse a body of text into nodes 
+PROMPT =\
+'''# Parse a body of text into nodes 
 ## Process
-The text, in Markdown format, must be split into nodes that encapsulate as best as it can.
+The document, in Markdown format, is used to create a directed acyclic graph, without reference to any outside material. The graph must be in raw text following the DOT graph description language.
+### Nodes
+The document, in Markdown format, must be split into nodes that encapsulate chunks of text with a semantic coherence as best as they can.
 Examples:
-- For non-fiction writing, split it into topics, concepts,
-- For fiction writing, 
+- For non-fiction writing, split it into topic summaries or introductions, concepts, examples, etc.
+- For fiction writing, split it into scenes, descriptions, notes, etc.
 - For an exercise book, split it into questions and answers.
-The nodes must have a connection.
+### Edges (Connections)
+The nodes may be connected to one parent, or to no parent, making it a "root node". A node with no other node connecting to it makes it a "leaf node" The graph may have multiple roots, in the case that a node has no reasonable connection to a parent node.
 Examples:
-- for non-fiction writing, each node may connect to nodes  progression from fundamental and narrow ideas, to advanced and/or broad ideas.
-- For fiction writing, 
+- for non-fiction writing, each node may connect to nodes progression from fundamental and narrow ideas, to advanced and/or broad ideas.
+
+ALL the sections, sub-sections, etc. following "The text:" until "The graph:" are part of the document to be converted.
+DON'T describe the document, the workings of 
+## The text:
+
+{}
+
+## The graph:
 '''
 try:
-    fname: str = sys.argv[1]
+    fname = sys.argv[1]
     # TODO: bash completion or choose from index, will be easier with a TUI
-    modelId: str = sys.argv[2]
+    modelId = sys.argv[2]
 except IndexError as e:
     raise IndexError(USAGE_STR) from e
 fextension = fname[fname.rfind('.')+1:]
@@ -44,27 +55,6 @@ if fextension not in FORMATS:
 if modelId not in MODEL_IDS:
     raise ValueError("unavailable model; choose from https://openrouter.ai/models")
 model = next(model for model in MODELS if model['id'] == modelId)
-
-
-# these imports take long so I placed them after initial checks
-# even if it disrespects pylint C0413
-# pylint: disable=wrong-import-position
-# some example usage in marker/scripts/convert_single.py
-from marker.converters.pdf import PdfConverter
-from marker.models import create_model_dict
-from marker.output import text_from_rendered
-# pylint: enable=wrong-import-position
-
-FORMAT_CONVERTERS = {'pdf': PdfConverter}
-assert tuple(FORMAT_CONVERTERS.keys()) == FORMATS
-
-tstart = time.time()
-converter = FORMAT_CONVERTERS[fextension](
-    artifact_dict=create_model_dict(),
-)
-rendered = converter(fname)
-text, _, images = text_from_rendered(rendered)
-print(f"took:\t{round(time.time() - tstart, 2)}s (imports + parsing)")
 
 # get info about limits: https://openrouter.ai/docs/api-reference/limits#rate-limits-and-credits-remaining
 res = requests.get(
@@ -75,20 +65,57 @@ res = requests.get(
     timeout=10,
 )
 res.raise_for_status()
-print(f"OpenRouter tokens remaining: {res.json()['data']['limit_remaining']}")
+print(f"OpenRouter tokens: {res.json()['data']['limit_remaining']}")
+
+# these imports take long so I placed them after initial checks
+# even if it disrespects pylint C0413
+# pylint: disable=wrong-import-position
+# some example usage in marker/scripts/convert_single.py
+from marker.config.parser import ConfigParser
+from marker.converters.pdf import PdfConverter
+from marker.models import create_model_dict
+from marker.renderers.markdown import MarkdownOutput
+from marker.output import text_from_rendered
+# pylint: enable=wrong-import-position
+
+MARKER_CONFIG = {
+    "output_format": "md"
+}
+MARKER_CONFIG_PARSER = ConfigParser(MARKER_CONFIG)
+FORMAT_CONVERTERS = {'pdf': PdfConverter}
+assert tuple(FORMAT_CONVERTERS.keys()) == FORMATS
+
+tstart = time.time()
+converter = FORMAT_CONVERTERS[fextension](
+    config=MARKER_CONFIG_PARSER.generate_config_dict(),
+    artifact_dict=create_model_dict(),
+)
+rendered: MarkdownOutput = converter(fname)
+rendered_text = rendered.markdown
+print(f"took: {round(time.time() - tstart, 2)}s (imports + parsing)")
 
 res = requests.post(
-  url="https://openrouter.ai/api/v1/completions",
-  headers={
-    "Authorization": "Bearer "+API_TOKEN,
-  },
-  data=json.dumps({
-    "model": model,
-    "prompt": PROMPT+" "+text}),
-  timeout=30,
-).json()
+    url="https://openrouter.ai/api/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer "+API_TOKEN,
+    },
+    data=json.dumps({
+        "model": model['id'],
+        # "prompt": PROMPT.format(rendered_text),
+        "messages": [{
+            "role": "user",
+            "content": PROMPT.format(rendered_text),
+        }],
+    }),
+    # NOTE: too little?
+    timeout=30,
+)
+res_body = res.json()
 
 if not res.ok:
+    if res_body:
     # https://openrouter.ai/docs/api-reference/errors
-    print(res.error.message, file=sys.stderr)
+        raise requests.exceptions.HTTPError(f'OpenRouter: {res_body['error']['message']} ({res.status_code})')
     res.raise_for_status()
+
+print(res_body)
