@@ -2,6 +2,8 @@
 ## Roadmap
 - [ ] use llm to cut story up into pieces, scenes
     - it's possible that llms are not necessary for this (but could be useful / are an option), if we use algorithms that are already used for chunking in RAG (https://stackoverflow.blog/2024/12/27/breaking-up-is-hard-to-do-chunking-in-rag-applications/)
+    - use sumy to summarize (for the part that goes into the LLM)?
+    - ask it to explain why two particular nodes were connected?
 - [ ] just start with the first scene in the narrative as the first node, create graph
 - [ ] at each step of graph construction use the graph + scenes you have to figure out where the next scene belongs in the graph
 

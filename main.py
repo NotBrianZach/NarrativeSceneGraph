@@ -17,8 +17,21 @@ except FileNotFoundError as e:
 USAGE_STR = f"usage: {sys.argv[0]} <filename> <model>"
 OUT_DIR = Path("out")
 FORMATS = ('pdf',) # TODO: moar
-MODELS = json.loads(Path('.models').read_text())['data']
-MODEL_IDS = [model['id'] for model in MODELS]
+MODELS = json.loads(Path('.models.json').read_text())['data']
+MODEL_IDS = (model['id'] for model in MODELS)
+PROMPT = '''
+# Parse a body of text into nodes 
+## Process
+The text, in Markdown format, must be split into nodes that encapsulate as best as it can.
+Examples:
+- For non-fiction writing, split it into topics, concepts,
+- For fiction writing, 
+- For an exercise book, split it into questions and answers.
+The nodes must have a connection.
+Examples:
+- for non-fiction writing, each node may connect to nodes  progression from fundamental and narrow ideas, to advanced and/or broad ideas.
+- For fiction writing, 
+'''
 try:
     fname: str = sys.argv[1]
     # TODO: bash completion or choose from index, will be easier with a TUI
@@ -36,6 +49,7 @@ model = next(model for model in MODELS if model['id'] == modelId)
 # these imports take long so I placed them after initial checks
 # even if it disrespects pylint C0413
 # pylint: disable=wrong-import-position
+# some example usage in marker/scripts/convert_single.py
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import text_from_rendered
@@ -64,14 +78,13 @@ res.raise_for_status()
 print(f"OpenRouter tokens remaining: {res.json()['data']['limit_remaining']}")
 
 res = requests.post(
-  url="https://openrouter.ai/api/v1/chat/completions",
+  url="https://openrouter.ai/api/v1/completions",
   headers={
-    "Authorization": "Bearer"+API_TOKEN,
+    "Authorization": "Bearer "+API_TOKEN,
   },
   data=json.dumps({
     "model": model,
-    "messages": [text]
-  }),
+    "prompt": PROMPT+" "+text}),
   timeout=30,
 ).json()
 

@@ -1,5 +1,5 @@
 .API_TOKEN
-.models
+.models.json
 in/
 out/
 
