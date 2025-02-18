@@ -1,4 +1,8 @@
 # NarrativeSceneGraph
+## usage
+`$ ./main.py <file> <model>`
+- `<file>`: input file
+- `<model>`: model ID. Must be a valid ID in `.models.json` (run `$ make .models.json to generate it). A more human-friendly way to find them is in https://openrouter.ai/models.
 ## Roadmap
 - [ ] use llm to cut story up into pieces, scenes
     - it's possible that llms are not necessary for this (but could be useful / are an option), if we use algorithms that are already used for chunking in RAG (https://stackoverflow.blog/2024/12/27/breaking-up-is-hard-to-do-chunking-in-rag-applications/)

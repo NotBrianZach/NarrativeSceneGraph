@@ -36,7 +36,77 @@ Examples:
 - for non-fiction writing, each node may connect to nodes progression from fundamental and narrow ideas, to advanced and/or broad ideas.
 
 ALL the sections, sub-sections, etc. following the sub-section "The text:" are part of the document to be converted.
-DON'T describe the document or the workings of acyclic directed graphs. Output in the DOT graph description language format.
+DON'T describe the document or the workings of acyclic directed graphs. 
+Output in the DOT graph description language format.
+DON'T fill in the nodes with anything outside of the document. Don't refer to general knowledge, historical events, or facts, if they're not in the text. Use EXCLUSIVELY the text contained in the document.
+
+### Example graph
+```dot
+digraph ComputerScienceMindMap {{
+    node [shape=ellipse, style=filled, fillcolor=lightblue];
+    
+    "Computer Science" [label="Computer Science\nThe study of computation and information"];
+    "Programming" [label="Programming\nWriting and maintaining code"];
+    "Algorithms & Data Structures" [label="Algorithms & Data Structures\nTechniques for solving problems efficiently"];
+    "Databases" [label="Databases\nStorage and retrieval of structured data"];
+    "Networking" [label="Networking\nCommunication between computers"];
+    "Operating Systems" [label="Operating Systems\nSoftware that manages hardware and applications"];
+    "Artificial Intelligence" [label="Artificial Intelligence\nCreating systems that simulate human intelligence"];
+    "Cybersecurity" [label="Cybersecurity\nProtecting systems and data from threats"];
+    "Software Engineering" [label="Software Engineering\nDesigning, developing, and maintaining software"];
+    "Theory of Computation" [label="Theory of Computation\nMathematical study of computation"];
+    "Computer Graphics" [label="Computer Graphics\nCreating visual content using computers"];
+    
+    "Programming" -> "Python" [label="A high-level programming language"];
+    "Programming" -> "C++" [label="A powerful systems programming language"];
+    "Programming" -> "Java" [label="A versatile object-oriented language"];
+    "Programming" -> "JavaScript" [label="A language for web development"];
+    "Programming" -> "Functional Programming" [label="A paradigm focusing on immutability and functions"];
+    "Programming" -> "Object-Oriented Programming" [label="A paradigm based on objects and classes"];
+    
+    "Algorithms & Data Structures" -> "Sorting" [label="Techniques for arranging data"];
+    "Algorithms & Data Structures" -> "Graphs" [label="Data structures for networked relationships"];
+    "Algorithms & Data Structures" -> "Trees" [label="Hierarchical data structures"];
+    "Algorithms & Data Structures" -> "Dynamic Programming" [label="Optimization technique for recursive problems"];
+    
+    "Databases" -> "SQL" [label="Structured Query Language for databases"];
+    "Databases" -> "NoSQL" [label="Non-relational database solutions"];
+    "Databases" -> "Normalization" [label="Organizing data to reduce redundancy"];
+    "Databases" -> "Indexing" [label="Optimizing database queries"];
+    
+    "Networking" -> "TCP/IP" [label="Protocols for internet communication"];
+    "Networking" -> "HTTP" [label="Protocol for web communication"];
+    "Networking" -> "DNS" [label="System that translates domain names to IP addresses"];
+    "Networking" -> "Routing" [label="Directing data between networks"];
+    
+    "Operating Systems" -> "Memory Management" [label="Handling system memory allocation"];
+    "Operating Systems" -> "Process Scheduling" [label="Managing CPU time for tasks"];
+    "Operating Systems" -> "File Systems" [label="Organizing and storing files"];
+    "Operating Systems" -> "Concurrency" [label="Managing multiple executing tasks"];
+    
+    "Artificial Intelligence" -> "Machine Learning" [label="Training algorithms to learn from data"];
+    "Artificial Intelligence" -> "Deep Learning" [label="Neural networks for complex tasks"];
+    "Artificial Intelligence" -> "Neural Networks" [label="Models inspired by the human brain"];
+    "Artificial Intelligence" -> "Natural Language Processing" [label="Computational understanding of human language"];
+    
+    "Cybersecurity" -> "Cryptography" [label="Securing data through encryption"];
+    "Cybersecurity" -> "Ethical Hacking" [label="Testing security through controlled attacks"];
+    "Cybersecurity" -> "Firewalls" [label="Protecting networks from unauthorized access"];
+    "Cybersecurity" -> "Secure Coding" [label="Writing software with security in mind"];
+    
+    "Software Engineering" -> "Agile Development" [label="Iterative software development approach"];
+    "Software Engineering" -> "Version Control" [label="Tracking changes in source code"];
+    "Software Engineering" -> "Design Patterns" [label="Reusable solutions to common design problems"];
+    
+    "Theory of Computation" -> "Automata Theory" [label="Study of abstract machines"];
+    "Theory of Computation" -> "Turing Machines" [label="Theoretical model of computation"];
+    "Theory of Computation" -> "Computational Complexity" [label="Classifying problems based on difficulty"];
+    
+    "Computer Graphics" -> "Rendering" [label="Generating images from models"];
+    "Computer Graphics" -> "Ray Tracing" [label="Simulating light for realistic graphics"];
+    "Computer Graphics" -> "3D Modeling" [label="Creating three-dimensional representations"];
+}}
+```
 
 ## The text:
 
@@ -68,11 +138,14 @@ res.raise_for_status()
 print(f"OpenRouter tokens: {res.json()['data']['limit_remaining']}")
 
 Path("out").mkdir(exist_ok=True)
-outsForFname = filter(lambda name: name.startswith(fpath), os.listdir("out"))
-lastOutFname = next(iter(sorted(outsForFname, reverse=True)))
-lastOutIdx = 
+outsForFname = filter(lambda name: name.startswith(fname), os.listdir("out"))
+lastOutFile = next(iter(sorted(outsForFname, reverse=True)), None)
+if lastOutFile:
+    lastOutIdx = lastOutFile[len(fname)+1:len(fname)+4]
+else:
+    lastOutIdx = -1
+saveOutIdx = f'{int(lastOutIdx)+1:03d}'
 
-saveIdx = f'{int(lastIdx)+1:03d}'
 
 # these imports take crazy long so I placed them after initial checks
 # even if it disrespects pylint C0413
@@ -101,7 +174,7 @@ converter = FORMAT_CONVERTERS[fextension](
 rendered: MarkdownOutput = converter(fpath)
 rendered_text = rendered.markdown
 print(f"took: {round(time.time() - tstart, 2)}s (parsing)")
-Path(f"out/{fname}.{saveIdx}.parse").write_text(rendered_text)
+Path(f"out/{fname}.{saveOutIdx}.parse").write_text(rendered_text)
 
 
 tstart = time.time()
@@ -131,4 +204,4 @@ if not res.ok:
     res.raise_for_status()
 
 graph = res_body['choices'][0]['message']['content']
-Path(f"out/{fname}.{saveIdx}.graph").write_text(graph)
+Path(f"out/{fname}.{saveOutIdx}.graph").write_text(graph)
