@@ -1,7 +1,7 @@
 .API_TOKEN
 .models.json
-in/
-out/
+# in/
+# out/
 
 .venv/
 .vscode/

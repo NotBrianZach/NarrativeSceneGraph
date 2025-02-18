@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import json
 import time
+import subprocess
 import requests
 
 
@@ -112,12 +113,16 @@ digraph ComputerScienceMindMap {{
 
 {}
 '''
+
 try:
     fpath = sys.argv[1]
     # TODO: bash completion or choose from index, will be easier with a TUI
     modelId = sys.argv[2]
 except IndexError as e:
     raise IndexError(USAGE_STR) from e
+file = Path(fpath)
+if not file.exists():
+    raise FileNotFoundError(f"input file {fpath} doesn't exist")
 fname = fpath[fpath.rfind('/')+1:]
 fextension = fname[fname.rfind('.')+1:]
 if fextension not in FORMATS:
@@ -174,7 +179,7 @@ converter = FORMAT_CONVERTERS[fextension](
 rendered: MarkdownOutput = converter(fpath)
 rendered_text = rendered.markdown
 print(f"took: {round(time.time() - tstart, 2)}s (parsing)")
-Path(f"out/{fname}.{saveOutIdx}.parse").write_text(rendered_text)
+Path(f"out/{fname}.{saveOutIdx}.md").write_text(rendered_text)
 
 
 tstart = time.time()
@@ -203,5 +208,20 @@ if not res.ok:
         raise requests.exceptions.HTTPError(f'OpenRouter: {res_body['error']['message']} ({res.status_code})')
     res.raise_for_status()
 
-graph = res_body['choices'][0]['message']['content']
-Path(f"out/{fname}.{saveOutIdx}.graph").write_text(graph)
+llm_out: str = res_body['choices'][0]['message']['content']
+Path(f"out/{fname}.{saveOutIdx}.txt").write_text(llm_out)
+
+# until we can get it to output raw .dot
+dotStart = llm_out.find("```dot")
+dotEnd = llm_out.rfind("```")
+
+graph = llm_out[dotStart+6:dotEnd]
+graphFpath = f"out/{fname}.{saveOutIdx}.dot"
+Path(graphFpath).write_text(graph)
+
+try:
+    png = subprocess.run(["dot", "-Tpng", graphFpath], capture_output=True, check=True)
+except subprocess.CalledProcessError as e:
+    raise e(png.stderr)
+
+Path(f"out/{fname}.{saveOutIdx}.png").write_bytes(png.stdout)

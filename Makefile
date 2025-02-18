@@ -1,5 +1,5 @@
 ifeq ($(ARGS), ) # if empty, choose some defaults
-ARGS := in/in.pdf deepseek/deepseek-r1-distill-llama-70b:free
+ARGS := in/CrookedHouse.pdf deepseek/deepseek-r1-distill-llama-70b:free
 endif
 
 run: .venv .models.json
@@ -9,6 +9,7 @@ run: .venv .models.json
 	python -m venv .venv
 	source .venv/bin/activate &&\
 	pip install -r requirements.txt
+	if [[ ! "$(command -v dot)" ]]; then echo "NOTE: remember to install graphviz (https://www.graphviz.org/)."; fi
 .models.json:
 	curl https://openrouter.ai/api/v1/models | python -m json.tool > .models.json
 

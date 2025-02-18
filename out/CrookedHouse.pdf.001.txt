@@ -1,0 +1,23 @@
+```dot
+digraph CrookedHouse {
+    node [shape=center, style=filled, fillcolor=lightblue];
+    
+    "Crooked House" [label="The Itsy Bitsy Dragon
+u/north];
+    "Quintus Teal" [label="An architect with ideas
+in third and fourth dimensions"];
+    "Homer Bailey" [label="Teal's friend and
+recipient of the crazy house plan"];
+    
+    "Quintus Teal" -> "Tesseract House" [label="A house built in a
+four-dimensional fold"];
+    "Tesseract House" -> "Several Rooms" [label="AllRoomslike itReallyAreReal"];
+    "Homer Bailey" -> "Earthquake" [label="The tremor that convicted
+Teal's theoretical house"];
+    "Earthquake" -> "Disappearance" [label="The house vanished
+into another dimension or elsewhere"];
+    
+    "Quintus Teal" [label=" inventions and concepts "];
+    "Homer Bailey" [label=" residence and final resting place "];
+}
+```
