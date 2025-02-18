@@ -1,5 +1,5 @@
 ifeq ($(ARGS), ) # if empty, choose some defaults
-ARGS := in/in.pdf cognitivecomputations/dolphin3.0-r1-mistral-24b:free
+ARGS := in/in.pdf deepseek/deepseek-r1-distill-llama-70b:free
 endif
 
 run: .venv .models.json
