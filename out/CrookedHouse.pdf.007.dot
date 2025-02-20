@@ -1,0 +1,47 @@
+
+digraph HeinleinCrookedHouse {
+    rankdir=TB;
+
+    // Root node: Beginning of the story
+    Start [label="Quintus Teal proposes a tesseract house", shape=ellipse];
+
+    // Initial branching paths
+    Design [label="Teal explains 4D geometry to Homer Bailey", shape=box];
+    Build [label="House is built as a 3D projection of a tesseract", shape=box];
+
+    // Merging paths into the key event
+    EnterHouse [label="Homer and Bailey and Mrs. Bailey inspect the house", shape=ellipse];
+
+    // The surreal experience inside
+    Collapse [label="Earthquake causes the house to 'unfold' into 4D", shape=diamond];
+    Loop [label="They find themselves trapped in a looping, non-Euclidean space", shape=diamond];
+    Windows [label="French windows lead to unexpected places", shape=parallelogram];
+    Nowhere [label="Window shows nothingness", shape=parallelogram];
+    Skyscraper [label="Window view of the Chrysler Building", shape=parallelogram];
+    AlienLandscape [label="Window shows an alien landscape", shape=parallelogram];
+
+    // The struggle to escape
+    Escape [label="Desperate search for an exit", shape=ellipse];
+
+    // The climax and resolution
+    Earthquake2 [label="Second earthquake causes the house to collapse", shape=diamond];
+    Disappearance [label="The house disappears completely", shape=box];
+
+    // Conclusion
+    End [label="They escape into the desert, house gone", shape=ellipse];
+
+    // Connecting edges
+    Start -> {Design, Build};
+    Design -> EnterHouse;
+    Build -> EnterHouse;
+    EnterHouse -> Collapse;
+    Collapse -> {Loop, Windows, Nowhere, Skyscraper, AlienLandscape};
+    Loop -> Escape;
+    Windows -> Escape;
+    Nowhere -> Escape;
+    Skyscraper -> Escape;
+    AlienLandscape -> Escape;
+    Escape -> Earthquake2;
+    Earthquake2 -> Disappearance;
+    Disappearance -> End;
+}

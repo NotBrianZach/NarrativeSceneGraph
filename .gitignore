@@ -2,6 +2,7 @@
 .models.json
 # in/
 # out/
+out/_*
 
-.venv/
-.vscode/
+.venv
+.vscode

@@ -1,0 +1,34 @@
+
+digraph Heinlein_CrookedHouse {
+    rankdir=TB;
+    node [shape=box];
+
+    Introduction [label="Americans are considered crazy anywhere in the world.
+They will usually concede a basis for the accusation but point to California as the focus of the infection."]
+    
+    ArchitectIdea [label="Quintus Teal regarded the efforts of his colleagues in architecture as faint-hearted, fumbling, and timid."]
+    
+    TesseractConcept [label="Bailey reached up and shook his arm. 'Snap out of it. What the hell are you talking about, four dimensions? Time is the fourth dimension; you can't drive nails into that."]
+    
+    HouseConstruction [label="Things are done fast in southern California. Ordinary houses there are usually built in a month's time. Under Teal's impassioned heckling the tesseract house climbed dizzily skyward in days rather than weeks, and its cross-shaped second story came jutting out at the four corners of the world."]
+    
+    EarthquakeEffect [label="By the way, they will drive you up Laurel Canyon 'where we keep the violent cases.' The Canyonites—the brown-legged women, the trunks-clad men constantly busy building and rebuilding their slap-happy unfinished houses—regard with faint contempt the dull creatures who live down in the flats."]
+    
+    HouseCollapses [label="Great jumping cats!' he yelled, 'I've been robbed!' He broke into a run.
+Front or back, the story was the same: the other seven rooms had disappeared, vanished completely."]
+    
+    StrangeExperiences [label="They found themselves standing in the middle one of the five rooms which constituted the second floor of the original structure."]
+    
+    EscapeAttempts [label="Teal went back to the window and gazed down the series of rooms through which he had pursued the mysterious stranger."]
+    
+    FinalCollapse [label="It was gone. There was not even the ground floor room. It had vanished."]
+    
+    Introduction -> ArchitectIdea;
+    ArchitectIdea -> TesseractConcept;
+    TesseractConcept -> HouseConstruction;
+    HouseConstruction -> EarthquakeEffect;
+    EarthquakeEffect -> HouseCollapses;
+    HouseCollapses -> StrangeExperiences;
+    StrangeExperiences -> EscapeAttempts;
+    EscapeAttempts -> FinalCollapse;
+}

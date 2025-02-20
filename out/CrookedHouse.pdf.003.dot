@@ -1,0 +1,27 @@
+
+digraph CrookedHouse {
+    node [shape=ellipse, style=filled, fillcolor=lightblue];
+
+    "And He Built a Crooked House" [label="And He Built a Crooked House\nby Robert A. Heinlein"];
+    "Hollywood Culture" [label="Hollywood Culture\nA place where eccentricity thrives"];
+    "Quintus Teal" [label="Quintus Teal\nRadical architect with visionary ideas"];
+    "Tesseract House Concept" [label="Tesseract House Concept\nA four-dimensional architectural design"];
+    "Construction of Tesseract House" [label="Construction of Tesseract House\nBuilt for Homer Bailey and his wife"];
+    "Earthquake Impact" [label="Earthquake Impact\nTriggered the collapse of the house"];
+    "Four-Dimensional Collapse" [label="Four-Dimensional Collapse\nHouse folds into its tesseract form"];
+    "Looping Rooms" [label="Looping Rooms\nRooms connect in unexpected ways"];
+    "Alternate Realities" [label="Alternate Realities\nWindows show different dimensions"];
+    "Disappearance of the House" [label="Disappearance of the House\nVanished after final earthquake"];
+    "Stranded in the Desert" [label="Stranded in the Desert\nBaileys and Teal left stranded"];
+
+    "And He Built a Crooked House" -> "Hollywood Culture";
+    "Hollywood Culture" -> "Quintus Teal";
+    "Quintus Teal" -> "Tesseract House Concept";
+    "Tesseract House Concept" -> "Construction of Tesseract House";
+    "Construction of Tesseract House" -> "Earthquake Impact";
+    "Earthquake Impact" -> "Four-Dimensional Collapse";
+    "Four-Dimensional Collapse" -> "Looping Rooms";
+    "Looping Rooms" -> "Alternate Realities";
+    "Alternate Realities" -> "Disappearance of the House";
+    "Disappearance of the House" -> "Stranded in the Desert";
+}

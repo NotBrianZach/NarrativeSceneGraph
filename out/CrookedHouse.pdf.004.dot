@@ -1,0 +1,24 @@
+
+digraph Heinlein_CrookedHouse {
+    rankdir=TB;
+    node[shape=box];
+
+    Setting [label="California's eccentric environment: Hollywood's quirky culture and unique architecture."];
+    Quintus_Teal [label="Architect Quintus Teal proposes a revolutionary four-dimensional tesseract house design."];
+    House_Conception [label="Teal explains his vision of a tesseract as the future of architecture, inspired by higher-dimensional mathematics."];
+    House_Construction [label="The tesseract house is built, despite skepticism from local authorities and architects."];
+    Earthquake_Strikes [label="An earthquake causes the house to fold into its four-dimensional shape, creating impossible geometry."];
+    House Exploration [label="Teal, Homer, and Mrs. Bailey explore the tesseract's strange and ever-looping rooms."];
+    Escape_Attempts [label="The trio attempts to escape but finds themselves trapped in the tesseract's labyrinthine structure."];
+    House_Disappearance [label="Another earthquake causes the house to disappear, leaving the group stranded in a desolate area."];
+    Resolution [label="The survivors escape with the help of a rancher, leaving the mysterious house behind."];
+
+    Setting -> Quintus_Teal;
+    Quintus_Teal -> House_Conception;
+    House_Conception -> House_Construction;
+    House_Construction -> Earthquake_Strikes;
+    Earthquake_Strikes -> House_Exploration;
+    House_Exploration -> Escape_Attempts;
+    Escape_Attempts -> House_Disappearance;
+    House_Disappearance -> Resolution;
+}

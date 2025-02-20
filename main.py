@@ -9,109 +9,79 @@ import requests
 
 
 if __name__ != "__main__":
-    raise Exception("program is not a module; execute it directly")
+    sys.exit("program is not a module; execute it directly")
 
 
 try:
     API_TOKEN = os.environ.get("API_TOKEN") or Path('.API_TOKEN').read_text()
 except FileNotFoundError as e:
-    raise FileNotFoundError("provide the OpenRouter token through:\n- an environment variable `API_TOKEN`\n- a file `.API_TOKEN` containing it") from e
+    sys.exit("provide the OpenRouter token through:\n- an environment variable `API_TOKEN`\n- a file `.API_TOKEN` containing it")
 USAGE_STR = f"usage: {sys.argv[0]} <filename> <model>"
 OUT_DIR = Path("out")
 FORMATS = ('pdf',) # TODO: moar
 MODELS = json.loads(Path('.models.json').read_text())['data']
 MODEL_IDS = (model['id'] for model in MODELS)
 PROMPT_STR =\
-'''# Parse a body of text into nodes 
-## Process
-The document, in Markdown format, is used to create a directed acyclic graph, without reference to any outside material. The graph must be in raw text following the DOT graph description language.
-### Nodes
-The nodes must encapsulate chunks of text with a semantic coherence as best as they can. The node content is DIRECTLY FROM THE DOCUMENT and NOT CREATED or EXTRACTED FROM ELSEWHERE 
-Examples:
-- For non-fiction writing, split it into topic summaries or introductions, concepts, examples, etc.
-- For fiction writing, split it into scenes, descriptions, notes, etc.
-- For an exercise book, split it into questions and answers.
-### Edges (Connections)
-The nodes may be connected to one parent, or to no parent, making it a "root node". A node with no other node connecting to it makes it a "leaf node" The graph may have multiple roots, in the case that a node has no reasonable connection to a parent node.
-Examples:
-- for non-fiction writing, each node may connect to nodes progression from fundamental and narrow ideas, to advanced and/or broad ideas.
-
-ALL the sections, sub-sections, etc. following the sub-section "The text:" are part of the document to be converted.
+'''# Narrative Scene Graph
+Describe the following narrative as a directed acyclical graph in the DOT graph description language format. Start with a single root node, that may branch out, especially when there are scenes or sub-narratives occurring in parallel. These branches MUST converge to a final end node, corresponding to the end of the narrative.
 DON'T describe the document or the workings of acyclic directed graphs. 
-Output in the DOT graph description language format.
-DON'T fill in the nodes with anything outside of the document. Don't refer to general knowledge, historical events, or facts, if they're not in the text. Use EXCLUSIVELY the text contained in the document.
+DON'T fill the nodes with anything outside of the document. Don't refer to general knowledge, historical events, or facts, if they're not in the text. Quote EXCLUSIVELY the text contained in the document. 
+DON'T adjust the labels, even if to make them more concise, because they must quote the text directly.
 
-### Example graph
+## Example graph for fiction writing
 ```dot
-digraph ComputerScienceMindMap {{
-    node [shape=ellipse, style=filled, fillcolor=lightblue];
-    
-    "Computer Science" [label="Computer Science\nThe study of computation and information"];
-    "Programming" [label="Programming\nWriting and maintaining code"];
-    "Algorithms & Data Structures" [label="Algorithms & Data Structures\nTechniques for solving problems efficiently"];
-    "Databases" [label="Databases\nStorage and retrieval of structured data"];
-    "Networking" [label="Networking\nCommunication between computers"];
-    "Operating Systems" [label="Operating Systems\nSoftware that manages hardware and applications"];
-    "Artificial Intelligence" [label="Artificial Intelligence\nCreating systems that simulate human intelligence"];
-    "Cybersecurity" [label="Cybersecurity\nProtecting systems and data from threats"];
-    "Software Engineering" [label="Software Engineering\nDesigning, developing, and maintaining software"];
-    "Theory of Computation" [label="Theory of Computation\nMathematical study of computation"];
-    "Computer Graphics" [label="Computer Graphics\nCreating visual content using computers"];
-    
-    "Programming" -> "Python" [label="A high-level programming language"];
-    "Programming" -> "C++" [label="A powerful systems programming language"];
-    "Programming" -> "Java" [label="A versatile object-oriented language"];
-    "Programming" -> "JavaScript" [label="A language for web development"];
-    "Programming" -> "Functional Programming" [label="A paradigm focusing on immutability and functions"];
-    "Programming" -> "Object-Oriented Programming" [label="A paradigm based on objects and classes"];
-    
-    "Algorithms & Data Structures" -> "Sorting" [label="Techniques for arranging data"];
-    "Algorithms & Data Structures" -> "Graphs" [label="Data structures for networked relationships"];
-    "Algorithms & Data Structures" -> "Trees" [label="Hierarchical data structures"];
-    "Algorithms & Data Structures" -> "Dynamic Programming" [label="Optimization technique for recursive problems"];
-    
-    "Databases" -> "SQL" [label="Structured Query Language for databases"];
-    "Databases" -> "NoSQL" [label="Non-relational database solutions"];
-    "Databases" -> "Normalization" [label="Organizing data to reduce redundancy"];
-    "Databases" -> "Indexing" [label="Optimizing database queries"];
-    
-    "Networking" -> "TCP/IP" [label="Protocols for internet communication"];
-    "Networking" -> "HTTP" [label="Protocol for web communication"];
-    "Networking" -> "DNS" [label="System that translates domain names to IP addresses"];
-    "Networking" -> "Routing" [label="Directing data between networks"];
-    
-    "Operating Systems" -> "Memory Management" [label="Handling system memory allocation"];
-    "Operating Systems" -> "Process Scheduling" [label="Managing CPU time for tasks"];
-    "Operating Systems" -> "File Systems" [label="Organizing and storing files"];
-    "Operating Systems" -> "Concurrency" [label="Managing multiple executing tasks"];
-    
-    "Artificial Intelligence" -> "Machine Learning" [label="Training algorithms to learn from data"];
-    "Artificial Intelligence" -> "Deep Learning" [label="Neural networks for complex tasks"];
-    "Artificial Intelligence" -> "Neural Networks" [label="Models inspired by the human brain"];
-    "Artificial Intelligence" -> "Natural Language Processing" [label="Computational understanding of human language"];
-    
-    "Cybersecurity" -> "Cryptography" [label="Securing data through encryption"];
-    "Cybersecurity" -> "Ethical Hacking" [label="Testing security through controlled attacks"];
-    "Cybersecurity" -> "Firewalls" [label="Protecting networks from unauthorized access"];
-    "Cybersecurity" -> "Secure Coding" [label="Writing software with security in mind"];
-    
-    "Software Engineering" -> "Agile Development" [label="Iterative software development approach"];
-    "Software Engineering" -> "Version Control" [label="Tracking changes in source code"];
-    "Software Engineering" -> "Design Patterns" [label="Reusable solutions to common design problems"];
-    
-    "Theory of Computation" -> "Automata Theory" [label="Study of abstract machines"];
-    "Theory of Computation" -> "Turing Machines" [label="Theoretical model of computation"];
-    "Theory of Computation" -> "Computational Complexity" [label="Classifying problems based on difficulty"];
-    
-    "Computer Graphics" -> "Rendering" [label="Generating images from models"];
-    "Computer Graphics" -> "Ray Tracing" [label="Simulating light for realistic graphics"];
-    "Computer Graphics" -> "3D Modeling" [label="Creating three-dimensional representations"];
+digraph HeinleinCrookedHouse {{
+    rankdir=TB;
+
+    // Root node: Beginning of the story
+    Start [label="Quintus Teal proposes a tesseract house", shape=ellipse];
+
+    // Initial branching paths
+    Design [label="Teal explains 4D geometry to Homer and Matson", shape=box];
+    Build [label="House is built as a 3D projection of a tesseract", shape=box];
+
+    // Merging paths into the key event
+    EnterHouse [label="Homer and Matson enter the house", shape=ellipse];
+
+    // The surreal experience inside
+    Collapse [label="Earthquake causes the house to 'unfold' into 4D", shape=diamond];
+    Lost [label="They find themselves trapped in a looping, non-Euclidean space", shape=diamond];
+
+    // Strange interior exploration
+    GravityShift [label="Gravity shifts unpredictably", shape=parallelogram];
+    Recursion [label="Rooms repeat in paradoxical ways", shape=parallelogram];
+    WindowView [label="They see landscapes from impossible locations", shape=parallelogram];
+
+    // The struggle to escape
+    ExitSearch [label="Desperate search for an exit", shape=ellipse];
+
+    // The climax and resolution
+    FinalJump [label="They attempt to exit through a door, re-emerging outside", shape=diamond];
+    HouseGone [label="The house disappears completely", shape=box];
+
+    // Conclusion
+    End [label="Teal realizes the house collapsed into another dimension", shape=ellipse];
+
+    // Connecting edges
+    Start -> {{Design Build}};
+    Design -> EnterHouse;
+    Build -> EnterHouse;
+    EnterHouse -> Collapse;
+    Collapse -> {{Lost WindowView}};
+    Lost -> {{GravityShift Recursion ExitSearch}};
+    GravityShift -> ExitSearch;
+    Recursion -> ExitSearch;
+    WindowView -> ExitSearch;
+    ExitSearch -> FinalJump;
+    FinalJump -> HouseGone;
+    HouseGone -> End;
 }}
 ```
 
-## The text:
-
+## The narrative:
+```md
 {}
+```
 '''
 
 try:
@@ -119,16 +89,16 @@ try:
     # TODO: bash completion or choose from index, will be easier with a TUI
     modelId = sys.argv[2]
 except IndexError as e:
-    raise IndexError(USAGE_STR) from e
+    sys.exit(USAGE_STR)
 file = Path(fpath)
 if not file.exists():
-    raise FileNotFoundError(f"input file {fpath} doesn't exist")
+    sys.exit(f"input file {fpath} doesn't exist")
 fname = fpath[fpath.rfind('/')+1:]
 fextension = fname[fname.rfind('.')+1:]
 if fextension not in FORMATS:
-    raise ValueError("unavailable file format; choose from " + str(FORMATS))
+    sys.exit("unavailable file format; choose from " + str(FORMATS))
 if modelId not in MODEL_IDS:
-    raise ValueError("unavailable model; choose from https://openrouter.ai/models")
+    sys.exit("unavailable model; choose from https://openrouter.ai/models")
 model = next(filter(lambda model: model['id'] == modelId, MODELS), '')
 
 # get info about limits: https://openrouter.ai/docs/api-reference/limits#rate-limits-and-credits-remaining
@@ -145,10 +115,7 @@ print(f"OpenRouter tokens: {res.json()['data']['limit_remaining']}")
 Path("out").mkdir(exist_ok=True)
 outsForFname = filter(lambda name: name.startswith(fname), os.listdir("out"))
 lastOutFile = next(iter(sorted(outsForFname, reverse=True)), None)
-if lastOutFile:
-    lastOutIdx = lastOutFile[len(fname)+1:len(fname)+4]
-else:
-    lastOutIdx = -1
+lastOutIdx = lastOutFile and lastOutFile[len(fname)+1:len(fname)+4] or -1
 saveOutIdx = f'{int(lastOutIdx)+1:03d}'
 
 
@@ -190,7 +157,7 @@ res = requests.post(
     },
     data=json.dumps({
         "model": model['id'],
-        # "prompt": PROMPT.format(rendered_text),
+        # "prompt": PROMPT_STR.format(rendered_text),
         "messages": [{
             "role": "user",
             "content": PROMPT_STR.format(rendered_text),
@@ -205,7 +172,7 @@ res_body = res.json()
 if not res.ok:
     if res_body:
     # https://openrouter.ai/docs/api-reference/errors
-        raise requests.exceptions.HTTPError(f'OpenRouter: {res_body['error']['message']} ({res.status_code})')
+        sys.exit(f'OpenRouter: {res_body['error']['message']} ({res.status_code})')
     res.raise_for_status()
 
 llm_out: str = res_body['choices'][0]['message']['content']
@@ -215,13 +182,12 @@ Path(f"out/{fname}.{saveOutIdx}.txt").write_text(llm_out)
 dotStart = llm_out.find("```dot")
 dotEnd = llm_out.rfind("```")
 
-graph = llm_out[dotStart+6:dotEnd]
+graph = llm_out[dotStart+len('```dot'):dotEnd]
 graphFpath = f"out/{fname}.{saveOutIdx}.dot"
 Path(graphFpath).write_text(graph)
 
-try:
-    png = subprocess.run(["dot", "-Tpng", graphFpath], capture_output=True, check=True)
-except subprocess.CalledProcessError as e:
-    raise e(png.stderr)
+png = subprocess.run(["dot", "-Tpng", graphFpath], capture_output=True, check=False)
+if png.returncode != 0:
+    sys.exit(png.stderr)
 
 Path(f"out/{fname}.{saveOutIdx}.png").write_bytes(png.stdout)
