@@ -10,6 +10,9 @@ run: .venv .models.json
 	source .venv/bin/activate &&\
 	pip install -r requirements.txt
 	if [[ ! "$(command -v dot)" ]]; then echo "NOTE: remember to install graphviz (https://www.graphviz.org/)."; fi
+	echo "What's your OpenRouter API key?" &&\
+	read token &&\
+	echo $$token > .API_TOKEN
 .models.json:
 	curl https://openrouter.ai/api/v1/models | python -m json.tool > .models.json
 

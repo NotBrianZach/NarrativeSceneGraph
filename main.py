@@ -23,10 +23,10 @@ MODELS = json.loads(Path('.models.json').read_text())['data']
 MODEL_IDS = (model['id'] for model in MODELS)
 PROMPT_STR =\
 '''# Narrative Scene Graph
-Describe the following narrative as a directed acyclical graph in the DOT graph description language format. Start with a single root node, that may branch out, especially when there are scenes or sub-narratives occurring in parallel. These branches MUST converge to a final end node, corresponding to the end of the narrative.
-DON'T describe the document or the workings of acyclic directed graphs. 
-DON'T fill the nodes with anything outside of the document. Don't refer to general knowledge, historical events, or facts, if they're not in the text. Quote EXCLUSIVELY the text contained in the document. 
-DON'T adjust the labels, even if to make them more concise, because they must quote the text directly.
+Describe the following narrative as a directed acyclic graph in the DOT graph description language format. Start with a single root node, that may branch out, especially when there are scenes or sub-narratives occurring in parallel. These branches MUST converge to a final end node, corresponding to the end of the narrative.
+DON'T describe the document or the workings of directed acyclic graphs. 
+DON'T fill the nodes with anything outside of the document. Don't refer to general knowledge, historical events, or facts, if they're not in the text. Quote EXCLUSIVELY the text contained in the document. On top of that, DON'T adjust the labels or quotes, even if to make them more concise. Again, they must quote the text directly.
+Don't repeat the same node or scene. If they happen to repeat in the narrative itself, merge them into the same node.
 
 ## Example graph for fiction writing
 ```dot

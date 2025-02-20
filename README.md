@@ -1,8 +1,18 @@
 # NarrativeSceneGraph
-## usage
+## Setup
+`$ make` should set everything up for you. These are the things it does. The last step is manual:
+1. Create virtual environment and install dependencies from `requirements.txt`
+2. Save OpenRouter API token (options are an `.API_TOKEN` file or `API_TOKEN` environment variable)
+3. Cache available models into `.models.json` 
+4. (MANUALLY) Install [graphviz](https://www.graphviz.org/) (example: Arch: `pacman -S graphviz`)
+
+## Usage
 `$ ./main.py <file> <model>`
 - `<file>`: input file
 - `<model>`: model ID. Must be a valid ID in `.models.json` (run `$ make .models.json` to generate it). A more human-friendly way to find them is in https://openrouter.ai/models
+
+Final output will be `out/<file>.<iteration>.dot`. (example: [out/CrookedHouse.pdf.007.png](out/CrookedHouse.pdf.007.png))
+
 ## Roadmap
 - [ ] use llm to cut story up into pieces, scenes
     - it's possible that llms are not necessary for this (but could be useful / are an option), if we use algorithms that are already used for chunking in RAG (https://stackoverflow.blog/2024/12/27/breaking-up-is-hard-to-do-chunking-in-rag-applications/)
