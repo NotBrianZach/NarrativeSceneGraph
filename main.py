@@ -16,11 +16,11 @@ try:
     API_TOKEN = os.environ.get("API_TOKEN") or Path('.API_TOKEN').read_text()
 except FileNotFoundError as e:
     sys.exit("provide the OpenRouter token through:\n- an environment variable `API_TOKEN`\n- a file `.API_TOKEN` containing it")
-USAGE_STR = f"usage: {sys.argv[0]} <filename> <model>"
 OUT_DIR = Path("out")
 FORMATS = ('pdf',) # TODO: moar
 MODELS = json.loads(Path('.models.json').read_text())['data']
 MODEL_IDS = (model['id'] for model in MODELS)
+USAGE_STR = f"usage: {sys.argv[0]} <filename> <model>"
 PROMPT_STR =\
 '''# Narrative Scene Graph
 Describe the following narrative as a directed acyclic graph in the DOT graph description language format. Start with a single root node, that may branch out, especially when there are scenes or sub-narratives occurring in parallel. These branches MUST converge to a final end node, corresponding to the end of the narrative.
@@ -113,40 +113,46 @@ res.raise_for_status()
 print(f"OpenRouter tokens: {res.json()['data']['limit_remaining']}")
 
 Path("out").mkdir(exist_ok=True)
-outsForFname = filter(lambda name: name.startswith(fname), os.listdir("out"))
-lastOutFile = next(iter(sorted(outsForFname, reverse=True)), None)
+# must wrap it in `set` because `filter` is a generator and reading its items consumes them
+outFiles = set(filter(lambda name: name.startswith(fname), os.listdir("out")))
+
+numberedOutFiles = filter(lambda name: not name.endswith('.md'), outFiles)
+lastOutFile = next(iter(sorted(numberedOutFiles, reverse=True)), None)
 lastOutIdx = lastOutFile and lastOutFile[len(fname)+1:len(fname)+4] or -1
 saveOutIdx = f'{int(lastOutIdx)+1:03d}'
 
+mdFile = next(filter(lambda name: name.endswith('.md'), outFiles), None)
+if mdFile:
+    rendered_text = (Path("out")/mdFile).read_text()
+else:
+    # these imports take crazy long so I placed them after initial checks
+    # even if it disrespects pylint C0413
+    # pylint: disable=wrong-import-position
+    tstart = time.time()
+    from marker.config.parser import ConfigParser
+    from marker.converters.pdf import PdfConverter
+    from marker.models import create_model_dict
+    from marker.renderers.markdown import MarkdownOutput
+    # some example usage in marker/scripts/convert_single.py
+    # pylint: enable=wrong-import-position
+    print(f"took: {round(time.time() - tstart, 2)}s (imports)")
 
-# these imports take crazy long so I placed them after initial checks
-# even if it disrespects pylint C0413
-# pylint: disable=wrong-import-position
-tstart = time.time()
-from marker.config.parser import ConfigParser
-from marker.converters.pdf import PdfConverter
-from marker.models import create_model_dict
-from marker.renderers.markdown import MarkdownOutput
-# some example usage in marker/scripts/convert_single.py
-# pylint: enable=wrong-import-position
-print(f"took: {round(time.time() - tstart, 2)}s (imports)")
+    MARKER_CONFIG = {
+        "output_format": "md"
+    }
+    MARKER_CONFIG_PARSER = ConfigParser(MARKER_CONFIG)
+    FORMAT_CONVERTERS = {'pdf': PdfConverter}
+    assert tuple(FORMAT_CONVERTERS.keys()) == FORMATS
 
-MARKER_CONFIG = {
-    "output_format": "md"
-}
-MARKER_CONFIG_PARSER = ConfigParser(MARKER_CONFIG)
-FORMAT_CONVERTERS = {'pdf': PdfConverter}
-assert tuple(FORMAT_CONVERTERS.keys()) == FORMATS
-
-tstart = time.time()
-converter = FORMAT_CONVERTERS[fextension](
-    config=MARKER_CONFIG_PARSER.generate_config_dict(),
-    artifact_dict=create_model_dict(),
-)
-rendered: MarkdownOutput = converter(fpath)
-rendered_text = rendered.markdown
-print(f"took: {round(time.time() - tstart, 2)}s (parsing)")
-Path(f"out/{fname}.{saveOutIdx}.md").write_text(rendered_text)
+    tstart = time.time()
+    converter = FORMAT_CONVERTERS[fextension](
+        config=MARKER_CONFIG_PARSER.generate_config_dict(),
+        artifact_dict=create_model_dict(),
+    )
+    rendered: MarkdownOutput = converter(fpath)
+    rendered_text = rendered.markdown
+    print(f"took: {round(time.time() - tstart, 2)}s (parsing)")
+    Path(f"out/{fname}.{saveOutIdx}.md").write_text(rendered_text)
 
 
 tstart = time.time()
