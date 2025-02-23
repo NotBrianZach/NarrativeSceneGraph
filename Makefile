@@ -1,5 +1,6 @@
 ifeq ($(ARGS), ) # if empty, choose some defaults
-ARGS := in/CrookedHouse.pdf deepseek/deepseek-r1-distill-llama-70b:free
+# ARGS := in/CrookedHouse.pdf deepseek/deepseek-r1-distill-llama-70b:free
+ARGS := in/mobydick.pdf deepseek/deepseek-r1-distill-llama-70b:free
 endif
 
 run: .venv .models.json
