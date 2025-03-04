@@ -14,6 +14,7 @@
           pkgs.gcc              # Provides libstdc++
           pkgs.graphviz
           pkgs.python311Packages.numpy        # NumPy package for Python 3.11
+          pkgs.mesa                        # Mesa provides libGL.so.1
         ];
 
         # Set LD_LIBRARY_PATH to include the gcc libraries
@@ -24,4 +25,3 @@
       };
     };
 }
-
