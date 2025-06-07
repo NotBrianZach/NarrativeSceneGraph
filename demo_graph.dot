@@ -1,0 +1,16 @@
+digraph MobyDickDemo {
+    rankdir=TB;
+    node [shape=box, style=rounded];
+    edge [fontsize=10];
+
+    // Nodes
+    scene_1 [label="Call me Ishmael", shape=doublecircle];
+    scene_2 [label="The artist desires to paint", shape=ellipse];
+    scene_3 [label="Going to sea when hazy", shape=ellipse];
+    scene_4 [label="The spout of the whale", shape=doublecircle];
+
+    // Edges
+    scene_1 -> scene_2 [label="leads_to"];
+    scene_2 -> scene_3 [label="continues"];
+    scene_3 -> scene_4 [label="flows_to"];
+}
