@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 def get_api_token() -> str:
     """Get the OpenRouter API token from environment or file."""
     try:
-        return os.environ.get("API_TOKEN") or Path('.API_TOKEN').read_text().strip()
+        return (os.environ.get("API_TOKEN") or 
+                os.environ.get("OPENROUTER_API_KEY") or 
+                Path('.API_TOKEN').read_text().strip())
     except FileNotFoundError:
         raise ValueError("OpenRouter API token not found")
 
