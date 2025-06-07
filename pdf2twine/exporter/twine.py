@@ -10,26 +10,30 @@ logger = logging.getLogger(__name__)
 
 def sanitize_passage_name(name: str) -> str:
     """
-    Sanitize passage name for Twee format.
+    Sanitize passage name for Twee format, preserving spaces.
     
     Args:
         name: Raw passage name
-        
     Returns:
         Sanitized passage name safe for Twee
     """
-    # Replace problematic characters
-    sanitized = name.replace(' ', '_').replace('\n', '_')
+    # Replace newlines and tabs with spaces and remove quotes
+    cleaned = name.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    cleaned = cleaned.replace('"', '').replace("'", '')
+
+    # Remove characters Twine cannot handle
+    # Allow letters, digits, spaces, hyphens, underscores
+    import re
+    sanitized = re.sub(r'[^a-zA-Z0-9 \-_]', '_', cleaned)
     
-    # Remove or replace other special characters
-    allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-')
-    sanitized = ''.join(c if c in allowed_chars else '_' for c in sanitized)
+    # Collapse multiple spaces
+    sanitized = re.sub(r' {2,}', ' ', sanitized).strip()
     
-    # Ensure reasonable length
+    # Truncate overly long names
     if len(sanitized) > 50:
-        sanitized = sanitized[:47] + "..."
+        sanitized = sanitized[:47] + '...'
     
-    return sanitized or "unnamed_passage"
+    return sanitized or 'unnamed_passage'
 
 
 def escape_twee_content(content: str) -> str:
@@ -82,17 +86,11 @@ def write_twee(graph: Dict, output_path: str, story_title: str = "Generated Stor
     
     # Start writing the Twee file
     with open(output_path, 'w', encoding='utf-8') as f:
-        # Write story metadata
-        f.write(f":: Story [Twine2]\n\n")
-        f.write(f"{{\n")
-        f.write(f'  "name": "{story_title}",\n')
-        f.write(f'  "startnode": "{nodes[0]["id"]}",\n')
-        f.write(f'  "creator": "pdf2twine",\n')
-        f.write(f'  "creator-version": "1.0.0",\n')
-        f.write(f'  "ifid": "{str(uuid.uuid4()).upper()}"\n')
-        f.write(f"}}\n\n")
+        # (Removed JSON header for direct Twine GUI import)
+        # First passage will be the starting passage by default
+        pass
         
-        # Write each passage
+        # Write each passage (no metadata header)
         for node in nodes:
             node_id = node['id']
             passage_name = sanitize_passage_name(node['label'])

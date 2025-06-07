@@ -84,13 +84,11 @@ def test_write_twee_basic():
         # Read the generated content
         content = Path(temp_path).read_text()
         
-        # Check basic structure
-        assert ':: Story [Twine2]' in content
-        assert '"name": "Test Story"' in content
-        assert ':: Opening_scene <100,200>' in content
-        assert ':: Second_scene <300,400>' in content
+        # Check basic passages without JSON header
+        assert ':: Opening scene <100,200>' in content
+        assert ':: Second scene <300,400>' in content
         assert 'This is the opening of our story.' in content
-        assert '[[Continue|Second_scene]]' in content
+        assert '[[Continue|Second scene]]' in content
         
     finally:
         Path(temp_path).unlink()
@@ -116,8 +114,8 @@ def test_write_twee_sanitizes_passage_names():
         write_twee(graph, temp_path, "Test Story")
         content = Path(temp_path).read_text()
         
-        # Should sanitize the passage name
-        assert ':: Scene_with__quotes__and_special_chars___' in content
+        # Should sanitize the passage name, preserving spaces
+        assert ':: Scene with quotes and special chars___' in content
         assert '"' not in content.split('\n')[0]  # No quotes in passage header
         
     finally:
