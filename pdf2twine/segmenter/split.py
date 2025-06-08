@@ -60,9 +60,6 @@ def split_llm(text: str, max_scenes: int = 200, model_id: Optional[str] = None) 
 
     Returns:
         List of scene text blocks
-
-    Raises:
-        ValueError: If API call fails or response is invalid
     """
     if model_id is None:
         model_id = "openai/gpt-4o-mini"
@@ -70,8 +67,9 @@ def split_llm(text: str, max_scenes: int = 200, model_id: Optional[str] = None) 
     # Get API token
     try:
         api_token = os.environ.get("API_TOKEN") or os.environ.get("OPENROUTER_API_KEY") or Path('.API_TOKEN').read_text().strip()
-    except FileNotFoundError:
-        raise ValueError("OpenRouter API token not found")
+    except Exception as e:
+        logger.warning(f"Failed to get API token: {e}")
+        raise ValueError("OpenRouter API token not found") from e
 
     # Prepare prompt
     prompt = f"""Analyze the following text and split it into narrative scenes. Each scene should be a coherent unit of action or dialogue.
@@ -144,8 +142,8 @@ Text to analyze:
                 logger.error(f"Final LLM output extract: {snippet if 'snippet' in locals() else llm_output[:200]}...")
                 raise ValueError("LLM did not return valid JSON")
 
-    except requests.RequestException as e:
-        logger.error(f"OpenRouter API request failed: {e}")
+    except Exception as e:
+        logger.warning(f"OpenRouter API request failed: {e}")
         raise ValueError("Failed to call OpenRouter API") from e
 
 
@@ -167,13 +165,10 @@ def split_auto(text: str, force_llm: bool = False, **kwargs) -> List[str]:
     if force_llm:
         try:
             return split_llm(text, **kwargs)
-        except ValueError as e:
+        except Exception as e:
             logger.warning(f"LLM split failed, falling back to heuristic: {e}")
             # Fallback: ignore LLM-specific kwargs for heuristic
             return split_heuristic(text)
     # Default to heuristic split; allow min_length override if provided
     min_len = kwargs.get('min_length', None)
-    return split_heuristic(text, min_length=min_len) if min_len is not None else split_heuristic(text) 
-    #     return split_llm(text, **kwargs)
-    # else:
-    #     return split_heuristic(text, **kwargs)
+    return split_heuristic(text, min_length=min_len) if min_len is not None else split_heuristic(text)

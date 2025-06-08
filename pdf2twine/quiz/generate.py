@@ -29,14 +29,15 @@ def make_quiz(scene: str, model_id: Optional[str] = None) -> Dict:
         
     Returns:
         Dictionary with 'question', 'options', and 'answer' keys
-        
-    Raises:
-        ValueError: If API call fails or response is invalid
     """
     if model_id is None:
         model_id = "openai/gpt-4o-mini"
     
-    api_token = get_api_token()
+    try:
+        api_token = get_api_token()
+    except Exception as e:
+        logger.warning(f"Failed to get API token: {e}")
+        raise ValueError("API token not available") from e
     
     # Prepare prompt for quiz generation
     prompt = f"""Generate a multiple choice quiz question based on the following scene. The question should test comprehension of key events, characters, or details.
@@ -128,8 +129,8 @@ Quiz JSON:"""
                 logger.error(f"Final LLM output extract: {snippet if 'snippet' in locals() else llm_output[:200]}...")
                 raise ValueError("LLM did not return valid JSON")
             
-    except requests.RequestException as e:
-        logger.error(f"OpenRouter API request failed: {e}")
+    except Exception as e:
+        logger.warning(f"OpenRouter API request failed: {e}")
         raise ValueError("Failed to call OpenRouter API") from e
 
 
@@ -191,7 +192,7 @@ def add_quizzes_to_graph(graph: Dict, model_id: Optional[str] = None) -> Dict:
         
         try:
             quiz_data = make_quiz(scene_text, model_id)
-        except ValueError as e:
+        except Exception as e:
             logger.warning(f"LLM quiz generation failed for {scene_id}: {e}")
             quiz_data = make_quiz_fallback(scene_text)
         

@@ -30,14 +30,15 @@ def extract_scene_relationships(summarized_scenes: List[Dict[str, str]],
 
     Returns:
         List of triples (source_id, relationship, target_id) representing edges
-
-    Raises:
-        ValueError: If API call fails or response is invalid
     """
     if model_id is None:
         model_id = "openai/gpt-4o-mini"
 
-    api_token = get_api_token()
+    try:
+        api_token = get_api_token()
+    except Exception as e:
+        logger.warning(f"Failed to get API token: {e}")
+        raise ValueError("API token not available") from e
 
     # Prepare scene summaries for analysis
     scene_list = []
@@ -139,8 +140,8 @@ Relationships:"""
                 logger.error(f"Final LLM output extract: {snippet if 'snippet' in locals() else llm_output[:200]}...")
                 raise ValueError("LLM did not return valid JSON")
 
-    except requests.RequestException as e:
-        logger.error(f"OpenRouter API request failed: {e}")
+    except Exception as e:
+        logger.warning(f"OpenRouter API request failed: {e}")
         raise ValueError("Failed to call OpenRouter API") from e
 
 
@@ -195,12 +196,19 @@ def extract_narrative_graph(summarized_scenes: List[Dict[str, str]],
 
     Returns:
         Dictionary containing nodes and edges for the narrative graph
-
-    Raises:
-        ValueError: If extraction fails
     """
     # Extract relationships using LLM
-    relationships = extract_scene_relationships(summarized_scenes, model_id)
+    try:
+        relationships = extract_scene_relationships(summarized_scenes, model_id)
+    except Exception as e:
+        logger.warning(f"Failed to extract relationships via LLM: {e}")
+        # Fallback to sequential relationships
+        relationships = []
+        for i in range(len(summarized_scenes) - 1):
+            source_id = summarized_scenes[i]['id']
+            target_id = summarized_scenes[i + 1]['id']
+            relationships.append((source_id, "leads_to", target_id))
+        logger.info(f"Using fallback sequential relationships: {len(relationships)} edges")
 
     # Ensure connectivity
     enhanced_relationships = ensure_connectivity(summarized_scenes, relationships)
