@@ -103,7 +103,7 @@ Text to analyze:
         result = response.json()
         llm_output = result['choices'][0]['message']['content']
         
-        # Try to parse JSON response
+        # Try to parse JSON response (robust extraction)
         try:
             scenes = json.loads(llm_output)
             if not isinstance(scenes, list):
@@ -120,10 +120,25 @@ Text to analyze:
             logger.info(f"LLM split: {len(scenes)} scenes")
             return scenes
             
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse LLM JSON response: {e}")
-            logger.debug(f"LLM output: {llm_output[:500]}...")
-            raise ValueError("LLM did not return valid JSON") from e
+        except json.JSONDecodeError:
+            # Attempt to extract JSON array from output
+            logger.warning("LLM output not valid JSON, attempting substring extraction")
+            first = llm_output.find('[')
+            last = llm_output.rfind(']')
+            if first != -1 and last != -1 and last > first:
+                snippet = llm_output[first:last+1]
+                try:
+                    scenes = json.loads(snippet)
+                    if not isinstance(scenes, list):
+                        raise ValueError
+                except Exception:
+                    logger.error("Failed to parse extracted JSON snippet")
+                    scenes = None
+            else:
+                scenes = None
+            if not isinstance(scenes, list):
+                logger.error(f"Final LLM output extract: {snippet if 'snippet' in locals() else llm_output[:200]}...")
+                raise ValueError("LLM did not return valid JSON")
             
     except requests.RequestException as e:
         logger.error(f"OpenRouter API request failed: {e}")
@@ -146,6 +161,12 @@ def split_auto(text: str, force_llm: bool = False, **kwargs) -> List[str]:
         List of scene text blocks
     """
     if force_llm:
-        return split_llm(text, **kwargs)
-    else:
-        return split_heuristic(text, **kwargs) 
+        try:
+            return split_llm(text, **kwargs)
+        except ValueError as e:
+            logger.warning(f"LLM split failed, falling back to heuristic: {e}")
+            # Fallback: ignore LLM-specific kwargs for heuristic
+            return split_heuristic(text)
+    # Default to heuristic split; allow min_length override if provided
+    min_len = kwargs.get('min_length', None)
+    return split_heuristic(text, min_length=min_len) if min_len is not None else split_heuristic(text) 
