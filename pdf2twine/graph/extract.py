@@ -105,10 +105,39 @@ Relationships:"""
             logger.info(f"Extracted {len(valid_relationships)} valid relationships")
             return valid_relationships
 
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse LLM JSON response: {e}")
-            logger.debug(f"LLM output: {llm_output[:500]}...")
-            raise ValueError("LLM did not return valid JSON") from e
+        except json.JSONDecodeError:
+            # Attempt to extract JSON array from output
+            logger.warning("LLM output not valid JSON, attempting substring extraction")
+            first = llm_output.find('[')
+            last = llm_output.rfind(']')
+            if first != -1 and last != -1 and last > first:
+                snippet = llm_output[first:last+1]
+                try:
+                    relationships = json.loads(snippet)
+                    if not isinstance(relationships, list):
+                        raise ValueError
+                    
+                    # Validate and filter relationships
+                    valid_scene_ids = {scene['id'] for scene in summarized_scenes}
+                    valid_relationships = []
+
+                    for rel in relationships:
+                        if (isinstance(rel, list) and len(rel) == 3 and
+                            rel[0] in valid_scene_ids and rel[2] in valid_scene_ids):
+                            valid_relationships.append(tuple(rel))
+                        else:
+                            logger.warning(f"Invalid relationship: {rel}")
+
+                    logger.info(f"Extracted {len(valid_relationships)} valid relationships from substring")
+                    return valid_relationships
+                except Exception:
+                    logger.error("Failed to parse extracted JSON snippet")
+                    relationships = None
+            else:
+                relationships = None
+            if not isinstance(relationships, list):
+                logger.error(f"Final LLM output extract: {snippet if 'snippet' in locals() else llm_output[:200]}...")
+                raise ValueError("LLM did not return valid JSON")
 
     except requests.RequestException as e:
         logger.error(f"OpenRouter API request failed: {e}")

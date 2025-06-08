@@ -94,10 +94,39 @@ Quiz JSON:"""
             
             return quiz_data
             
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse quiz JSON response: {e}")
-            logger.debug(f"LLM output: {llm_output[:500]}...")
-            raise ValueError("LLM did not return valid JSON") from e
+        except json.JSONDecodeError:
+            # Attempt to extract JSON object from output
+            logger.warning("LLM output not valid JSON, attempting substring extraction")
+            first = llm_output.find('{')
+            last = llm_output.rfind('}')
+            if first != -1 and last != -1 and last > first:
+                snippet = llm_output[first:last+1]
+                try:
+                    quiz_data = json.loads(snippet)
+                    if not isinstance(quiz_data, dict):
+                        raise ValueError
+                    
+                    # Validate structure
+                    required_keys = ['question', 'options', 'answer']
+                    if not all(key in quiz_data for key in required_keys):
+                        raise ValueError("Quiz missing required keys")
+                    
+                    if not isinstance(quiz_data['options'], list) or len(quiz_data['options']) != 4:
+                        raise ValueError("Quiz must have exactly 4 options")
+                    
+                    if quiz_data['answer'] not in ['A', 'B', 'C', 'D']:
+                        raise ValueError("Answer must be A, B, C, or D")
+                    
+                    logger.info("Successfully parsed quiz from extracted JSON snippet")
+                    return quiz_data
+                except Exception:
+                    logger.error("Failed to parse extracted JSON snippet")
+                    quiz_data = None
+            else:
+                quiz_data = None
+            if not isinstance(quiz_data, dict):
+                logger.error(f"Final LLM output extract: {snippet if 'snippet' in locals() else llm_output[:200]}...")
+                raise ValueError("LLM did not return valid JSON")
             
     except requests.RequestException as e:
         logger.error(f"OpenRouter API request failed: {e}")
