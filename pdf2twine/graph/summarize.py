@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 def get_api_token() -> str:
     """Get the OpenRouter API token from environment or file."""
     try:
-        return os.environ.get("API_TOKEN") or Path('.API_TOKEN').read_text().strip()
+        return (os.environ.get("API_TOKEN") or
+                os.environ.get("OPENROUTER_API_KEY") or
+                Path('.API_TOKEN').read_text().strip())
     except FileNotFoundError:
         raise ValueError("OpenRouter API token not found")
 
@@ -20,22 +22,23 @@ def get_api_token() -> str:
 def summarize_scene(scene: str, model_id: Optional[str] = None) -> str:
     """
     Summarize a single scene using LLM.
-    
+
     Args:
         scene: Scene text to summarize
         model_id: OpenAI model to use (defaults to gpt-4o-mini)
-        
+
     Returns:
         Scene summary (≤25 words)
-        
-    Raises:
-        ValueError: If API call fails or response is invalid
     """
     if model_id is None:
         model_id = "openai/gpt-4o-mini"
-    
-    api_token = get_api_token()
-    
+
+    try:
+        api_token = get_api_token()
+    except Exception as e:
+        logger.warning(f"Failed to get API token: {e}")
+        raise ValueError("API token not available") from e
+
     # Prepare prompt for concise summarization
     prompt = f"""Summarize the following scene in exactly 25 words or fewer. Focus on the key action, characters, and narrative elements. Be precise and concise.
 
@@ -57,40 +60,37 @@ Summary (≤25 words):"""
             timeout=30,
         )
         response.raise_for_status()
-        
+
         result = response.json()
         summary = result['choices'][0]['message']['content'].strip()
-        
+
         # Validate word count
         word_count = len(summary.split())
         if word_count > 25:
             logger.warning(f"Summary has {word_count} words (>25): {summary}")
             # Truncate to first 25 words if needed
             summary = ' '.join(summary.split()[:25])
-        
+
         return summary
-        
-    except requests.RequestException as e:
-        logger.error(f"OpenRouter API request failed: {e}")
+
+    except Exception as e:
+        logger.warning(f"OpenRouter API request failed: {e}")
         raise ValueError("Failed to call OpenRouter API") from e
 
 
 def summarize_scenes(scenes: List[str], model_id: Optional[str] = None) -> List[Dict[str, str]]:
     """
     Summarize multiple scenes using LLM.
-    
+
     Args:
         scenes: List of scene texts to summarize
         model_id: OpenAI model to use (defaults to gpt-4o-mini)
-        
+
     Returns:
         List of dictionaries with 'text' and 'summary' keys for each scene
-        
-    Raises:
-        ValueError: If API call fails or response is invalid
     """
     summarized_scenes = []
-    
+
     for i, scene in enumerate(scenes):
         logger.info(f"Summarizing scene {i+1}/{len(scenes)}")
         try:
@@ -100,8 +100,8 @@ def summarize_scenes(scenes: List[str], model_id: Optional[str] = None) -> List[
                 'summary': summary,
                 'id': f"scene_{i+1}"
             })
-        except ValueError as e:
-            logger.error(f"Failed to summarize scene {i+1}: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to summarize scene {i+1}: {e}")
             # Use fallback summary if LLM fails
             fallback = scene[:100].replace('\n', ' ') + ('...' if len(scene) > 100 else '')
             summarized_scenes.append({
@@ -109,6 +109,6 @@ def summarize_scenes(scenes: List[str], model_id: Optional[str] = None) -> List[
                 'summary': fallback,
                 'id': f"scene_{i+1}"
             })
-    
-    logger.info(f"Successfully summarized {len(summarized_scenes)} scenes")
-    return summarized_scenes 
+
+    logger.info(f"Successfully processed {len(summarized_scenes)} scenes")
+    return summarized_scenes

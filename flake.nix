@@ -10,9 +10,9 @@
     in {
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = [
-          pkgs.python311        # Use the desired Python version
+          # pkgs.python311        # Use the desired Python version
           pkgs.gcc              # Provides libstdc++
-           pkgs.python311Packages.numpy        # NumPy package for Python 3.11
+           # pkgs.python311Packages.numpy        # NumPy package for Python 3.11
         ];
 
         # Set LD_LIBRARY_PATH to include the gcc libraries
