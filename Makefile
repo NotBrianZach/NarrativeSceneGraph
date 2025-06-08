@@ -6,7 +6,7 @@ run: .venv .models.json
 	source .venv/bin/activate &&\
 	./main.py $(ARGS)
 .venv: # should only run once
-	python -m venv .venv
+	python3 -m venv .venv
 	source .venv/bin/activate &&\
 	pip install -r requirements.txt
 	if [[ ! "$(command -v dot)" ]]; then echo "NOTE: remember to install graphviz (https://www.graphviz.org/)."; fi
@@ -14,7 +14,7 @@ run: .venv .models.json
 	read token &&\
 	echo $$token > .API_TOKEN
 .models.json:
-	curl https://openrouter.ai/api/v1/models | python -m json.tool > .models.json
+	curl https://openrouter.ai/api/v1/models | python3 -m json.tool > .models.json
 
 clean:
 	rm -f .models.json
