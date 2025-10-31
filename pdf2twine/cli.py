@@ -6,12 +6,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-# Import our modules
-from pdf2twine.loader import extract
-from pdf2twine.segmenter import split_auto
-from pdf2twine.graph import summarize_scenes, extract_narrative_graph, to_dot
-from pdf2twine.exporter import write_twee, assign_random_coordinates, assign_flow_coordinates
-from pdf2twine.quiz import add_quizzes_to_graph
+from pdf2twine.pipeline import PipelineConfig, PdfToTwinePipeline
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -106,62 +101,25 @@ def main():
         return 0
 
     try:
-        # Step 1: Extract text from PDF
-        logger.info(f"Extracting text from {args.input_file}")
-        text = extract(str(args.input_file))
-        logger.info(f"Extracted {len(text)} characters")
+        config = PipelineConfig(
+            model_id=args.model,
+            max_scenes=args.max_scenes,
+            layout=args.layout,
+            canvas_width=args.canvas_width,
+            canvas_height=args.canvas_height,
+            with_quiz=args.with_quiz,
+            force_llm_segmentation=args.llm or args.force_llm,
+        )
+        pipeline = PdfToTwinePipeline(config)
 
-        # Step 2: Segment text into scenes
-        logger.info("Segmenting text into scenes")
-        use_llm = args.llm or args.force_llm
-        scenes = split_auto(text, force_llm=use_llm, max_scenes=args.max_scenes, model_id=args.model)
-        logger.info(f"Created {len(scenes)} scenes")
-
-        if not scenes:
-            print("Error: No scenes were extracted from the document", file=sys.stderr)
-            return 1
-
-        # Step 3: Summarize scenes
-        logger.info("Summarizing scenes with LLM")
-        summarized_scenes = summarize_scenes(scenes, model_id=args.model)
-        logger.info(f"Summarized {len(summarized_scenes)} scenes")
-
-        # Step 4: Extract narrative graph
-        logger.info("Extracting narrative relationships")
-        graph = extract_narrative_graph(summarized_scenes, model_id=args.model)
-        logger.info(f"Created graph with {len(graph['nodes'])} nodes and {len(graph['edges'])} edges")
-
-        # Step 5: Add quizzes if requested
-        if args.with_quiz:
-            logger.info("Generating quizzes for scenes")
-            graph = add_quizzes_to_graph(graph, model_id=args.model)
-            logger.info(f"Added quiz nodes, total nodes now: {len(graph['nodes'])}")
-
-        # Step 6: Assign coordinates
-        logger.info(f"Assigning {args.layout} layout coordinates")
-        if args.layout == 'flow':
-            graph = assign_flow_coordinates(graph, args.canvas_width, args.canvas_height)
-        else:
-            graph = assign_random_coordinates(graph, args.canvas_width, args.canvas_height)
-
-        # Step 7: Write Twee output
-        logger.info(f"Writing Twee file to {args.output_file}")
-        args.output_file.parent.mkdir(parents=True, exist_ok=True)
-
-        # Import the write_twee function directly to avoid circular imports
-        from pdf2twine.exporter.twine import write_twee
-        write_twee(graph, str(args.output_file), story_title)
-
-        # Step 8: Write additional outputs if requested
-        if args.dot_output:
-            logger.info(f"Writing DOT file to {args.dot_output}")
-            dot_content = to_dot(graph, story_title.replace(' ', '_'))
-            args.dot_output.write_text(dot_content)
-
-        if args.html_output:
-            logger.info(f"Writing HTML file to {args.html_output}")
-            from pdf2twine.exporter.twine import write_twine_story
-            write_twine_story(graph, str(args.html_output), story_title)
+        graph = pipeline.build_graph(args.input_file)
+        pipeline.export_outputs(
+            graph,
+            args.output_file,
+            story_title,
+            dot_output=args.dot_output,
+            html_output=args.html_output,
+        )
 
         # Success summary
         print(f"✅ Successfully generated Twine story:")
